@@ -5,7 +5,6 @@
     Private Frames As Integer = 1                   ' Stores number of frames
     Private pageFaults As Integer = 0               ' Stores number of page faults
 
-
     Private Sub FIFO_Algorithm(ByRef frameList As List(Of Integer),
                           ByRef frameSet As HashSet(Of Integer),
                           ByRef pointer As Integer,
@@ -31,14 +30,17 @@
     End Sub
 
     Private Sub LRU_Algorithm(ByRef frameList As List(Of Integer),
-                         ByRef frameSet As HashSet(Of Integer),
-                         pageNum As Integer,
-                         ByRef isPageFault As Boolean)
+                           ByRef frameSet As HashSet(Of Integer),
+                           pageNum As Integer,
+                           refIndex As Integer,
+                           ByVal lastUsedMap As Dictionary(Of Integer, Integer),
+                           ByRef isPageFault As Boolean)
+
 
         ' Checks if pageNum is in memory (frameSet)
         If frameSet.Contains(pageNum) Then
-            frameList.Remove(pageNum)
-            frameList.Add(pageNum)
+            ' Update last used time
+            lastUsedMap(pageNum) = refIndex
         Else
             isPageFault = True
             pageFaults += 1
@@ -47,12 +49,18 @@
                 frameList.Add(pageNum)
                 frameSet.Add(pageNum)
             Else
-                Dim removedPage As Integer = frameList(0)
-                frameSet.Remove(removedPage)
-                frameList.RemoveAt(0)
-                frameList.Add(pageNum)
+                ' Find least recently used page
+                Dim lruPage As Integer = frameList.OrderBy(Function(p) If(lastUsedMap.ContainsKey(p), lastUsedMap(p), -1)).First()
+                Dim indexToReplace As Integer = frameList.IndexOf(lruPage)
+
+                ' Replace the least recently used page with the new page
+                frameSet.Remove(lruPage)
+                frameList(indexToReplace) = pageNum
                 frameSet.Add(pageNum)
             End If
+
+            ' Update last used time
+            lastUsedMap(pageNum) = refIndex
         End If
     End Sub
 
@@ -134,6 +142,8 @@
         Dim pointer As Integer = 0 ' Only used for FIFO
         Dim xOffset As Integer = 15
 
+        Dim lastUsedMap As New Dictionary(Of Integer, Integer)()
+
         For refIndex As Integer = 0 To pageReferences.Count - 1
             Dim pageNum As Integer = pageReferences(refIndex)
             Dim isPageFault As Boolean = False
@@ -153,7 +163,8 @@
                 Case "FIFO"
                     FIFO_Algorithm(frameList, frameSet, pointer, pageNum, isPageFault)
                 Case "LRU"
-                    LRU_Algorithm(frameList, frameSet, pageNum, isPageFault)
+                    LRU_Algorithm(frameList, frameSet, pageNum, refIndex, lastUsedMap, isPageFault)
+
                 Case "OPTIMAL"
                     OPT_Algorithm(frameList, frameSet, pageNum, refIndex, isPageFault)
             End Select
@@ -163,19 +174,25 @@
             For i As Integer = 0 To Frames - 1
 
                 Dim lbl As New Label With {
-                    .Text = If(i < frameList.Count, frameList(i).ToString(), " "),
-                    .Width = 80,
-                    .Height = 50,
-                    .Left = 10,
-                    .Top = yOffset,
-                    .TextAlign = ContentAlignment.MiddleCenter,
-                    .BackColor = If(i < frameList.Count, Color.FromArgb(206, 171, 205), Color.WhiteSmoke),
-                    .BorderStyle = BorderStyle.FixedSingle,
-                    .Padding = New Padding(5)
-                }
+        .Text = If(i < frameList.Count, frameList(i).ToString(), " "),
+        .Width = 80,
+        .Height = 50,
+        .Left = 10,
+        .Top = yOffset,
+        .TextAlign = ContentAlignment.MiddleCenter,
+        .BackColor = If(i < frameList.Count,
+                        If(isPageFault AndAlso frameList(i) = pageNum,
+                           Color.FromArgb(255, 100, 100), ' RED for replaced
+                           Color.FromArgb(206, 171, 205)), ' Purple for normal
+                        Color.WhiteSmoke),
+        .BorderStyle = BorderStyle.FixedSingle,
+        .Padding = New Padding(5)
+    }
+
                 stepPanel.Controls.Add(lbl)
                 yOffset += 45
             Next
+
 
             ' Add fault indicator
             Dim faultLabel As New Label With {
@@ -187,7 +204,7 @@
                 .Text = If(isPageFault, "Fault", "Miss")
             }
             faultLabel.Font = New Font(faultLabel.Font, FontStyle.Bold)
-            faultLabel.ForeColor = If(isPageFault, Color.FromArgb(129, 24, 68), Color.FromArgb( 206, 171, 205))
+            faultLabel.ForeColor = If(isPageFault, Color.FromArgb(129, 24, 68), Color.FromArgb(206, 171, 205))
 
             stepPanel.Controls.Add(faultLabel)
 
