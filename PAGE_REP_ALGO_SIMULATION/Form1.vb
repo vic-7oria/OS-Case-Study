@@ -79,8 +79,7 @@
             If frameList.Count < Frames Then
                 frameList.Add(pageNum)
                 frameSet.Add(pageNum)
-
-                ' 
+ 
             Else
                 Dim farthestIndex As Integer = -1
                 Dim replaceIndex As Integer = 0
