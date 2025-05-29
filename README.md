@@ -9,5 +9,6 @@ To get to .exe file, download zip and follow this path: _/PAGE_REP_ALGO_SIMULATI
 
 
 Documentation: 
-	[Domingo, Victoria Grace C_OS Case Study Documentation.pdf](https://github.com/user-attachments/files/20353005/Domingo.Victoria.Grace.C_OS.Case.Study.Documentation.pdf)
+	[Domingo, Victoria Grace C_OS Case Study Documentation.pdf](https://github.com/user-attachments/files/20497013/Domingo.Victoria.Grace.C_OS.Case.Study.Documentation.docx.pdf)
+
 
